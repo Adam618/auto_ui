@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, InvalidSelectorException
 from selenium.common.exceptions import NoAlertPresentException
 import unittest
 import time
@@ -17,8 +17,11 @@ def fill_general_info(driver, name, pwd):
 
 
 # 执行ocr识别操作，识别成功则返回True
-def is_ocr_success(driver):
+def apply_ocr(driver):
+    time.sleep(2)
     captcha_element = driver.find_element(By.XPATH, '//*[@id="imageCaptcha"]/img')
+    captcha_element.click()
+    time.sleep(2)
     captcha_element.screenshot('temp.png')
     captcha_image = Image.open('temp.png')
     width, height = captcha_image.size
@@ -28,7 +31,7 @@ def is_ocr_success(driver):
     cropped_image = captcha_image.crop(crop_area)
 
     # 添加时间戳
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    # timestamp = time.strftime("%Y%m%d_%H%M%S")
     # 保存裁剪后的图片，文件名包含时间戳
     # cropped_image.save(f"captcha_{timestamp}.png")
 
@@ -58,15 +61,35 @@ def is_ocr_success(driver):
         captcha_input_box = driver.find_element(By.XPATH, '//*[@id="imageCaptcha"]/div/input')
         captcha_input_box.clear()
         captcha_input_box.send_keys(value)
-        time.sleep(2)
         return True
     else:
         return False
 
+
 # 获取短信验证码相关操作
-def get_sms_code():
+def get_sms_code(driver):
+    driver.find_element(By.XPATH, "//*[@id='captcha']/span").click()
+    time.sleep(2)
+    # 点击获取短信验证码之后，会验证图片验证码是否输入正确，如果不正确则需要重新识别
+    # captcha_error = driver.find_elements(By.XPATH, '//*[@id = "imgCaptchaError"')
+
+    # if len(captcha_error) != 0:
+    #     print("!!!!!!!!!!!!!!")
+    #     apply_ocr(driver)
+    # try:
+    #     captcha_error = driver.find_elements(By.ID, 'imgCaptchaError')
+    #
+    #     if len(captcha_error) != 0:
+    #         print("!!!!!!!!!!!!!!")
+    #         apply_ocr(driver)
+    # except InvalidSelectorException as e:
+    #     pass
+
+    # driver.find_element(By.XPATH, "//div[@id='app']/div/div[2]/div/div[2]/form/div[10]/button").click()
+
     time.sleep(15)
     pass
+
 
 # 登录页相关操作
 def login_process(driver):
@@ -77,16 +100,13 @@ def login_process(driver):
     driver.get("http://10.143.28.206:23007/portal/#/login")
     fill_general_info(driver, name, pwd)
 
-    # 如果识别出错，则点击识别码重新识别
-    re_input_num = 5
-    for i in range(re_input_num):
-        if is_ocr_success(driver):
-            break
-        else:
-            driver.find_element(By.XPATH, '//*[@id="imageCaptcha"]/img').click()
+    status = apply_ocr(driver)
+    if not status:
+        apply_ocr(driver)
 
     # 待完成，返回状态码后进行下一步
-    get_sms_code()
+    get_sms_code(driver)
+
 
 # 登录页之后的操作
 def task_process():
@@ -102,15 +122,15 @@ class AppDynamicsJob(unittest.TestCase):
         self.accept_next_alert = True
 
     def test_app_dynamics_job(self):
-
         driver = self.driver
         # 登录操作
         login_process(driver)
         # 登录完成跳转
         driver.find_element(By.XPATH, "//div[@id='app']/div/div[2]/div/div[2]/form/div[10]/button").click()
-        time.sleep(200)
+        time.sleep(2000)
         # 登录后续操作，待完成
         task_process()
+
 
 if __name__ == "__main__":
     unittest.main()
