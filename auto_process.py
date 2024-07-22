@@ -1,12 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, InvalidSelectorException
-from selenium.common.exceptions import NoAlertPresentException
 import unittest
 import time
 import ddddocr
 from PIL import Image
 
+MAX_OCR_NUM = 10
 
 # 填充固定表单
 def fill_general_info(driver, name, pwd):
@@ -17,10 +16,11 @@ def fill_general_info(driver, name, pwd):
 
 
 # 执行ocr识别操作，识别成功则返回True
-def apply_ocr(driver):
-    time.sleep(2)
+def apply_ocr(driver, is_first=False):
     captcha_element = driver.find_element(By.XPATH, '//*[@id="imageCaptcha"]/img')
-    captcha_element.click()
+    if not is_first:
+        time.sleep(2)
+        captcha_element.click()
     time.sleep(2)
     captcha_element.screenshot('temp.png')
     captcha_image = Image.open('temp.png')
@@ -70,24 +70,6 @@ def apply_ocr(driver):
 def get_sms_code(driver):
     driver.find_element(By.XPATH, "//*[@id='captcha']/span").click()
     time.sleep(2)
-    # 点击获取短信验证码之后，会验证图片验证码是否输入正确，如果不正确则需要重新识别
-    # captcha_error = driver.find_elements(By.XPATH, '//*[@id = "imgCaptchaError"')
-
-    # if len(captcha_error) != 0:
-    #     print("!!!!!!!!!!!!!!")
-    #     apply_ocr(driver)
-    # try:
-    #     captcha_error = driver.find_elements(By.ID, 'imgCaptchaError')
-    #
-    #     if len(captcha_error) != 0:
-    #         print("!!!!!!!!!!!!!!")
-    #         apply_ocr(driver)
-    # except InvalidSelectorException as e:
-    #     pass
-
-    # driver.find_element(By.XPATH, "//div[@id='app']/div/div[2]/div/div[2]/form/div[10]/button").click()
-
-    time.sleep(15)
     pass
 
 
@@ -99,10 +81,11 @@ def login_process(driver):
 
     driver.get("http://10.143.28.206:23007/portal/#/login")
     fill_general_info(driver, name, pwd)
-
-    status = apply_ocr(driver)
-    if not status:
-        apply_ocr(driver)
+    status = apply_ocr(driver, is_first=True)
+    for i in range(MAX_OCR_NUM):
+        if status:
+            break
+        status = apply_ocr(driver)
 
     # 待完成，返回状态码后进行下一步
     get_sms_code(driver)
@@ -126,11 +109,10 @@ class AppDynamicsJob(unittest.TestCase):
         # 登录操作
         login_process(driver)
         # 登录完成跳转
-        driver.find_element(By.XPATH, "//div[@id='app']/div/div[2]/div/div[2]/form/div[10]/button").click()
+        driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div/div[2]/form/div[10]/button').click()
         time.sleep(2000)
         # 登录后续操作，待完成
         task_process()
-
 
 if __name__ == "__main__":
     unittest.main()
