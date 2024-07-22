@@ -3,20 +3,39 @@ from selenium.webdriver.common.by import By
 import unittest
 import time
 import ddddocr
+import pickle
 from PIL import Image
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-MAX_OCR_NUM = 10
+# 参数设置
+MAX_OCR_NUM = 10  # OCR最大识别次数
+NAME = "19953199425"  # 用户名
+PWD = "Caoyang5115236"  # 密码
 
-# 填充固定表单
-def fill_general_info(driver, name, pwd):
+
+def fill_general_info(driver, NAME, PWD):
+    """
+    填充用户名、密码固定表单
+    :param driver:
+    :param name: 用户名
+    :param pwd:  密码
+    :return:
+    """
     driver.find_element(By.NAME, "userName").click()
-    driver.find_element(By.NAME, "userName").send_keys(name)
+    driver.find_element(By.NAME, "userName").send_keys(NAME)
     driver.find_element(By.NAME, "password").click()
-    driver.find_element(By.NAME, "password").send_keys(pwd)
+    driver.find_element(By.NAME, "password").send_keys(PWD)
 
 
-# 执行ocr识别操作，识别成功则返回True
+
 def apply_ocr(driver, is_first=False):
+    """
+    # 对算术验证码执行ocr识别操作，识别成功则返回True
+    :param driver:
+    :param is_first: 是否第一次识别（第一次识别不需要刷新验证码）
+    :return:
+    """
     captcha_element = driver.find_element(By.XPATH, '//*[@id="imageCaptcha"]/img')
     if not is_first:
         time.sleep(2)
@@ -26,15 +45,10 @@ def apply_ocr(driver, is_first=False):
     captcha_image = Image.open('temp.png')
     width, height = captcha_image.size
 
-    # 计算主体裁剪区域，只保留左侧2/3部分
+    # 对验证码主题区域裁剪（只保留左侧2/3部分）
     crop_area = (0, 0, width * 3 // 5, height)
     cropped_image = captcha_image.crop(crop_area)
-
     # 添加时间戳
-    # timestamp = time.strftime("%Y%m%d_%H%M%S")
-    # 保存裁剪后的图片，文件名包含时间戳
-    # cropped_image.save(f"captcha_{timestamp}.png")
-
     ocr = ddddocr.DdddOcr()
     ocr.set_ranges("0123456789+-x/=")
     # OCR识别
@@ -44,7 +58,7 @@ def apply_ocr(driver, is_first=False):
     # 检查是否识别正确
     operators = "+-x/="
     # 识别结果大于3位且第2位有算术操作符才会进行下一步
-    if len(result) > 2 and result[1] in operators:
+    if len(result) == 3 and result[1] in operators:
         operand1 = int(result[0])
         operator = result[1]
         operand2 = int(result[2:])
@@ -66,34 +80,91 @@ def apply_ocr(driver, is_first=False):
         return False
 
 
-# 获取短信验证码相关操作
 def get_sms_code(driver):
+    """
+    目前为手动输入短信验证码
+    :param driver:
+    :return:
+    """
     driver.find_element(By.XPATH, "//*[@id='captcha']/span").click()
+    sms_captcha_input_box = driver.find_element(By.XPATH, "//*[@id='captcha']/div/input")
+    sms_captcha_input_box.click()
+    sms_captcha_input_box.clear()
     time.sleep(2)
-    pass
-
 
 # 登录页相关操作
 def login_process(driver):
+    """
+    登录页的相关操作，操作成功后跳转综调首页
+    :param driver:
+    :return:
+    """
     # 固定表单信息
-    name = "19953199425"
-    pwd = "Caoyang5115236"
-
     driver.get("http://10.143.28.206:23007/portal/#/login")
-    fill_general_info(driver, name, pwd)
+    fill_general_info(driver, NAME, PWD)
     status = apply_ocr(driver, is_first=True)
     for i in range(MAX_OCR_NUM):
         if status:
             break
         status = apply_ocr(driver)
-
-    # 待完成，返回状态码后进行下一步
     get_sms_code(driver)
 
+def check_and_click(driver):
+    """
+    寻找首页固定“网络数据管理平台”字段，执行自动处理相关操作。
+    :param driver:
+    :return:
+    """
+    try:
+        wait = WebDriverWait(driver, 10)
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//*[@id='tab-2']"))).click()
 
-# 登录页之后的操作
-def task_process():
-    pass
+        target_element = wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//div[contains(@class, 'gc-sch-wait-item-title') and contains(text(), '财辅报账系统申请')]")
+            )
+        )
+        target_element.click()
+        # time.sleep(5)
+        # # "添加逻辑是否有网络数据管理平台"
+        # driver.find_element(By.XPATH, "//div[@id='pane-0']/div/div/div/div/div/div/div").click()
+        # driver.find_element(By.ID, "dialog").click()
+        # driver.find_element(By.XPATH, "//textarea").click()
+        # driver.find_element(By.XPATH, "//textarea").clear()
+        # driver.find_element(By.XPATH, "//textarea").send_keys("已通知源端处理")
+        # driver.find_element(By.XPATH, "//input[@type='text']").click()
+        # driver.find_element(By.XPATH, "//div[2]/span/div").click()
+        # driver.find_element(By.XPATH, "//div[2]/div/div/input").click()
+        # driver.find_element(By.XPATH, "//div[2]/div/div/input").clear()
+        # driver.find_element(By.XPATH, "//div[2]/div/div/input").send_keys("孙国标")
+        # driver.find_element(By.XPATH,
+        #                     "(.//*[normalize-space(text()) and normalize-space(.)='员工'])[1]/following::div[1]").click()
+        # driver.find_element(By.XPATH,
+        #                     "(.//*[normalize-space(text()) and normalize-space(.)='取 消'])[1]/following::span[1]").click()
+        # driver.find_element(By.XPATH,
+        #                     "(.//*[normalize-space(text()) and normalize-space(.)='点击上传'])[1]/following::span[1]").click()
+        print("Clicked on the target element successfully.")
+        return True  # Indicate that the target element was found and clicked
+    except Exception:
+        return False  # Indicate that the target element was not found
+
+
+def task_process(driver):
+    """
+    登录之后的操作，无限循环刷新
+    :param driver:
+    :return:
+    """
+    start_time = time.time()  # 记录开始时间
+    while True:
+        # check_and_click(driver)
+        current_time = time.time()
+        run_time = current_time - start_time
+        run_minutes, run_seconds = divmod(run_time, 60)
+        run_hours, run_minutes = divmod(run_minutes, 60)
+        print(f"程序已运行 {int(run_hours):02d}:{int(run_minutes):02d}:{int(run_seconds):02d}")
+        time.sleep(300)  # Wait for 5 minutes before refreshing
+        driver.refresh()
 
 
 class AppDynamicsJob(unittest.TestCase):
@@ -105,14 +176,21 @@ class AppDynamicsJob(unittest.TestCase):
         self.accept_next_alert = True
 
     def test_app_dynamics_job(self):
+        """
+        主进程
+        :return:
+        """
+
         driver = self.driver
+        driver.maximize_window()
         # 登录操作
         login_process(driver)
+        # 手动短信验证码预留时间
+        time.sleep(20)
         # 登录完成跳转
         driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div/div[2]/form/div[10]/button').click()
-        time.sleep(2000)
-        # 登录后续操作，待完成
-        task_process()
+        time.sleep(5)
+        task_process(driver)
 
 if __name__ == "__main__":
     unittest.main()
