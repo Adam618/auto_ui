@@ -12,6 +12,8 @@ from selenium.webdriver.support import expected_conditions as EC
 MAX_OCR_NUM = 10  # OCR最大识别次数
 NAME = "19953199425"  # 用户名
 PWD = "Caoyang5115236"  # 密码
+# NAME = "17353462690"  # 用户名
+# PWD = "dbq$LoDgBoi"  # 密码
 
 
 def fill_general_info(driver, NAME, PWD):
@@ -115,39 +117,58 @@ def check_and_click(driver):
     :param driver:
     :return:
     """
+    original_window = driver.current_window_handle
     try:
         wait = WebDriverWait(driver, 10)
-        wait.until(EC.element_to_be_clickable((By.XPATH, "//*[@id='tab-2']"))).click()
 
+        # 打开首页并点击tab
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//*[@id='tab-0']"))).click()
+
+        # 点击目标元素
         target_element = wait.until(
             EC.element_to_be_clickable(
-                (By.XPATH, "//div[contains(@class, 'gc-sch-wait-item-title') and contains(text(), '财辅报账系统申请')]")
+                (By.XPATH, "//div[contains(@class, 'gc-sch-wait-item-title') and contains(text(), '网络数据管理平台')]")
             )
         )
         target_element.click()
-        # time.sleep(5)
-        # # "添加逻辑是否有网络数据管理平台"
-        # driver.find_element(By.XPATH, "//div[@id='pane-0']/div/div/div/div/div/div/div").click()
-        # driver.find_element(By.ID, "dialog").click()
-        # driver.find_element(By.XPATH, "//textarea").click()
-        # driver.find_element(By.XPATH, "//textarea").clear()
-        # driver.find_element(By.XPATH, "//textarea").send_keys("已通知源端处理")
-        # driver.find_element(By.XPATH, "//input[@type='text']").click()
-        # driver.find_element(By.XPATH, "//div[2]/span/div").click()
-        # driver.find_element(By.XPATH, "//div[2]/div/div/input").click()
-        # driver.find_element(By.XPATH, "//div[2]/div/div/input").clear()
-        # driver.find_element(By.XPATH, "//div[2]/div/div/input").send_keys("孙国标")
-        # driver.find_element(By.XPATH,
-        #                     "(.//*[normalize-space(text()) and normalize-space(.)='员工'])[1]/following::div[1]").click()
-        # driver.find_element(By.XPATH,
-        #                     "(.//*[normalize-space(text()) and normalize-space(.)='取 消'])[1]/following::span[1]").click()
-        # driver.find_element(By.XPATH,
-        #                     "(.//*[normalize-space(text()) and normalize-space(.)='点击上传'])[1]/following::span[1]").click()
+        time.sleep(5)
+
+        # 获取当前窗口句柄
+        # 切换到新窗口
+        for handle in driver.window_handles:
+            if handle != original_window:
+                driver.switch_to.window(handle)
+                break
+        time.sleep(5)
+        # 执行新页面上的操作
+        driver.find_element(By.ID, "dialog").click()
+        time.sleep(2)
+        driver.find_element(By.XPATH, "//textarea").click()
+        time.sleep(2)
+        driver.find_element(By.XPATH, "//textarea").clear()
+        time.sleep(2)
+        driver.find_element(By.XPATH, "//textarea").send_keys("已通知源端处理")
+        time.sleep(2)
+        driver.find_element(By.XPATH, "//input[@type='text']").clear()
+        time.sleep(2)
+        driver.find_element(By.XPATH, "//input[@type='text']").send_keys(u"孙国标")
+        time.sleep(2)
+        driver.find_element(By.XPATH,
+            u"(.//*[normalize-space(text()) and normalize-space(.)='确定'])[2]/following::div[5]").click()
+        # 取消按钮
+        time.sleep(2)
+        driver.find_element(By.XPATH,
+            u"(.//*[normalize-space(text()) and normalize-space(.)='点击上传'])[1]/following::button[1]").click()
+        # driver.find_element(By.XPATH, "//*[@id='dialog']")
+        time.sleep(5)
+        driver.close()
+        driver.switch_to.window(original_window)
         print("Clicked on the target element successfully.")
         return True  # Indicate that the target element was found and clicked
-    except Exception:
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        driver.switch_to.window(original_window)
         return False  # Indicate that the target element was not found
-
 
 def task_process(driver):
     """
@@ -157,20 +178,20 @@ def task_process(driver):
     """
     start_time = time.time()  # 记录开始时间
     while True:
-        # check_and_click(driver)
+        print(check_and_click(driver))
         current_time = time.time()
         run_time = current_time - start_time
         run_minutes, run_seconds = divmod(run_time, 60)
         run_hours, run_minutes = divmod(run_minutes, 60)
         print(f"程序已运行 {int(run_hours):02d}:{int(run_minutes):02d}:{int(run_seconds):02d}")
-        time.sleep(300)  # Wait for 5 minutes before refreshing
+        time.sleep(40)  # Wait for 5 minutes before refreshing
         driver.refresh()
 
 
 class AppDynamicsJob(unittest.TestCase):
     def setUp(self):
         self.driver = webdriver.Edge()
-        self.driver.implicitly_wait(30)
+        self.driver.implicitly_wait(60)
         self.base_url = "https://www.google.com/"
         self.verificationErrors = []
         self.accept_next_alert = True
@@ -186,7 +207,7 @@ class AppDynamicsJob(unittest.TestCase):
         # 登录操作
         login_process(driver)
         # 手动短信验证码预留时间
-        time.sleep(20)
+        time.sleep(30)
         # 登录完成跳转
         driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div/div[2]/form/div[10]/button').click()
         time.sleep(5)
