@@ -9,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 # 参数设置
-MAX_OCR_NUM = 10  # OCR最大识别次数
+MAX_OCR_NUM = 10  # OCR最大重新识别次数
 NAME = "19953199425"  # 用户名
 PWD = "Caoyang5115236"  # 密码
 # NAME = "17353462690"  # 用户名
@@ -56,7 +56,7 @@ def apply_ocr(driver, is_first=False):
     # OCR识别
     result = ocr.classification(cropped_image)
     # 提取操作数和运算符
-    print(result)
+    print("算术验证码识别结果：", result)
     # 检查是否识别正确
     operators = "+-x/="
     # 识别结果大于3位且第2位有算术操作符才会进行下一步
@@ -111,6 +111,7 @@ def login_process(driver):
         status = apply_ocr(driver)
     get_sms_code(driver)
 
+
 def check_and_click(driver):
     """
     寻找首页固定“网络数据管理平台”字段，执行自动处理相关操作。
@@ -155,20 +156,20 @@ def check_and_click(driver):
         time.sleep(2)
         driver.find_element(By.XPATH,
             u"(.//*[normalize-space(text()) and normalize-space(.)='确定'])[2]/following::div[5]").click()
-        # 取消按钮
         time.sleep(2)
-        driver.find_element(By.XPATH,
-            u"(.//*[normalize-space(text()) and normalize-space(.)='点击上传'])[1]/following::button[1]").click()
-        # driver.find_element(By.XPATH, "//*[@id='dialog']")
+        # 确定按钮
+        driver.find_element(By.XPATH, u"(.//*[normalize-space(text()) and normalize-space(.)='取消'])[3]/following::span[1]").click()
+        print("工单转发成功！")
         time.sleep(5)
         driver.close()
-        driver.switch_to.window(original_window)
-        print("Clicked on the target element successfully.")
         return True  # Indicate that the target element was found and clicked
     except Exception as e:
         print(f"An error occurred: {e}")
-        driver.switch_to.window(original_window)
+        time.sleep(5)
+        driver.close()
+        print("没有工单或者工单转发失败！")
         return False  # Indicate that the target element was not found
+
 
 def task_process(driver):
     """
@@ -178,13 +179,13 @@ def task_process(driver):
     """
     start_time = time.time()  # 记录开始时间
     while True:
-        print(check_and_click(driver))
+        check_and_click(driver)
         current_time = time.time()
         run_time = current_time - start_time
         run_minutes, run_seconds = divmod(run_time, 60)
         run_hours, run_minutes = divmod(run_minutes, 60)
         print(f"程序已运行 {int(run_hours):02d}:{int(run_minutes):02d}:{int(run_seconds):02d}")
-        time.sleep(40)  # Wait for 5 minutes before refreshing
+        time.sleep(300)  # Wait for 5 minutes before refreshing
         driver.refresh()
 
 
@@ -212,6 +213,7 @@ class AppDynamicsJob(unittest.TestCase):
         driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div/div[2]/form/div[10]/button').click()
         time.sleep(5)
         task_process(driver)
+
 
 if __name__ == "__main__":
     unittest.main()
