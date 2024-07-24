@@ -161,13 +161,13 @@ def check_and_click(driver):
         driver.find_element(By.XPATH, u"(.//*[normalize-space(text()) and normalize-space(.)='取消'])[3]/following::span[1]").click()
         print("工单转发成功！")
         time.sleep(5)
-        driver.close()
+        # driver.close()
         return True  # Indicate that the target element was found and clicked
     except Exception as e:
         print(f"An error occurred: {e}")
         time.sleep(5)
-        driver.close()
-        print("没有工单或者工单转发失败！")
+        # driver.close()
+        print("当前没有工单！")
         return False  # Indicate that the target element was not found
 
 
