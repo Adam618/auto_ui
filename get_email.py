@@ -83,7 +83,7 @@ class ReceiveEmail:
             # 检查邮件是否包含验证码
             if content:
                 # 有时候通知显示不全
-                verification_code = re.findall(r'验证码为(\d+)', content, re.S)
+                verification_code = re.findall(r'码为(\d+)', content, re.S)
                 if verification_code:
                     print('短信验证码:', verification_code[0])
                     # 标记邮件为已读

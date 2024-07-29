@@ -128,7 +128,7 @@ def get_sms_code(driver):
     verification_code = ReceiveEmail().qe_main()
     # 如果未找到验证码，提示用户手动输入
     if not verification_code:
-        print('未获取到短信验证码, 请重启脚本尝试手动输入！')
+        print('未获取到短信验证码, 请等待重启脚本或尝试手动输入！')
     else:
         # 将验证码输入到验证码输入框
         sms_captcha_input_box.send_keys(verification_code)
