@@ -16,6 +16,7 @@ from get_email import ReceiveEmail
 MAX_OCR_NUM = 10  # 验证码OCR最大重新识别次数
 NAME = "19953199425"  # 用户名
 PWD = "Caoyang5115236"  # 密码
+#
 
 
 # NAME = "17353462690"  # 用户名
