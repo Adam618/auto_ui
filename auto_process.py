@@ -1,19 +1,49 @@
+
+import sys
+import time
 from selenium import webdriver
+from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
 import unittest
-import time
 import ddddocr
 import pickle
 from PIL import Image
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from get_email import ReceiveEmail
 
 # 参数设置
-MAX_OCR_NUM = 10  # OCR最大重新识别次数
+MAX_OCR_NUM = 10  # 验证码OCR最大重新识别次数
 NAME = "19953199425"  # 用户名
 PWD = "Caoyang5115236"  # 密码
+
+
 # NAME = "17353462690"  # 用户名
 # PWD = "dbq$LoDgBoi"  # 密码
+
+def countdown(wait_time, message):
+    """
+    动态倒计时函数
+    :param wait_time: 倒计时时间（秒）
+    :param message: 倒计时提示信息
+    """
+    for remaining in range(wait_time, 0, -1):
+        sys.stdout.write("\r")
+        sys.stdout.write(f"{message}: {remaining:2d}秒")
+        sys.stdout.flush()
+        time.sleep(1)
+    sys.stdout.write(f"\r{message}: 0秒\n")
+
+
+def print_centered_message(message):
+    """
+    打印居中显示的消息，两边带分隔符
+    :param message: 要打印的消息
+    """
+    width = 80  # 控制台宽度
+    separator = '=' * 10
+    centered_message = f"{separator} {message} {separator}"
+    print("\n" + centered_message.center(width) + "\n")
 
 
 def fill_general_info(driver, NAME, PWD):
@@ -28,7 +58,6 @@ def fill_general_info(driver, NAME, PWD):
     driver.find_element(By.NAME, "userName").send_keys(NAME)
     driver.find_element(By.NAME, "password").click()
     driver.find_element(By.NAME, "password").send_keys(PWD)
-
 
 
 def apply_ocr(driver, is_first=False):
@@ -92,7 +121,19 @@ def get_sms_code(driver):
     sms_captcha_input_box = driver.find_element(By.XPATH, "//*[@id='captcha']/div/input")
     sms_captcha_input_box.click()
     sms_captcha_input_box.clear()
-    time.sleep(2)
+
+    # 动态倒计时
+    countdown(30, "等待短信验证码输入")
+
+    verification_code = ReceiveEmail().qe_main()
+    # 如果未找到验证码，提示用户手动输入
+    if not verification_code:
+        print('未获取到短信验证码, 请重启脚本尝试手动输入！')
+    else:
+        # 将验证码输入到验证码输入框
+        sms_captcha_input_box.send_keys(verification_code)
+    time.sleep(5)
+
 
 # 登录页相关操作
 def login_process(driver):
@@ -101,6 +142,7 @@ def login_process(driver):
     :param driver:
     :return:
     """
+    print_centered_message("开始登录")
     # 固定表单信息
     driver.get("http://10.143.28.206:23007/portal/#/login")
     fill_general_info(driver, NAME, PWD)
@@ -110,6 +152,12 @@ def login_process(driver):
             break
         status = apply_ocr(driver)
     get_sms_code(driver)
+    # 登录完成跳转
+    driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div/div[2]/form/div[10]/button').click()
+    time.sleep(5)
+
+    WebDriverWait(driver, 10).until(EC.url_to_be("http://10.143.28.206:23007/portal/#/"))
+    print_centered_message("登录成功，工单处理开始")
 
 
 def check_and_click(driver):
@@ -121,10 +169,8 @@ def check_and_click(driver):
     original_window = driver.current_window_handle
     try:
         wait = WebDriverWait(driver, 10)
-
         # 打开首页并点击tab
         wait.until(EC.element_to_be_clickable((By.XPATH, "//*[@id='tab-0']"))).click()
-
         # 点击目标元素
         target_element = wait.until(
             EC.element_to_be_clickable(
@@ -155,16 +201,17 @@ def check_and_click(driver):
         driver.find_element(By.XPATH, "//input[@type='text']").send_keys(u"孙国标")
         time.sleep(2)
         driver.find_element(By.XPATH,
-            u"(.//*[normalize-space(text()) and normalize-space(.)='确定'])[2]/following::div[5]").click()
+                            u"(.//*[normalize-space(text()) and normalize-space(.)='确定'])[2]/following::div[5]").click()
         time.sleep(2)
         # 确定按钮
-        driver.find_element(By.XPATH, u"(.//*[normalize-space(text()) and normalize-space(.)='取消'])[3]/following::span[1]").click()
+        driver.find_element(By.XPATH,
+                            u"(.//*[normalize-space(text()) and normalize-space(.)='取消'])[3]/following::span[1]").click()
         print("工单转发成功！")
         time.sleep(5)
         # driver.close()
         return True  # Indicate that the target element was found and clicked
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    except Exception:
+        # print(f"An error occurred: {Exception}")
         time.sleep(5)
         # driver.close()
         print("当前没有工单！")
@@ -184,16 +231,17 @@ def task_process(driver):
         run_time = current_time - start_time
         run_minutes, run_seconds = divmod(run_time, 60)
         run_hours, run_minutes = divmod(run_minutes, 60)
-        print(f"程序已运行 {int(run_hours):02d}:{int(run_minutes):02d}:{int(run_seconds):02d}")
-        time.sleep(300)  # Wait for 5 minutes before refreshing
+        print(f"当前程序已运行 {int(run_hours):02d}:{int(run_minutes):02d}:{int(run_seconds):02d}")
+        # 动态倒计时
+        countdown(300, "下次查询工单倒计时")
         driver.refresh()
 
 
 class AppDynamicsJob(unittest.TestCase):
     def setUp(self):
         self.driver = webdriver.Edge()
-        self.driver.implicitly_wait(60)
-        self.base_url = "https://www.google.com/"
+        # self.driver.implicitly_wait(60)
+        self.base_url = "http://10.143.28.206:23007/portal/#/login"
         self.verificationErrors = []
         self.accept_next_alert = True
 
@@ -203,16 +251,22 @@ class AppDynamicsJob(unittest.TestCase):
         :return:
         """
 
-        driver = self.driver
-        driver.maximize_window()
-        # 登录操作
-        login_process(driver)
-        # 手动短信验证码预留时间
-        time.sleep(30)
-        # 登录完成跳转
-        driver.find_element(By.XPATH, '//*[@id="app"]/div/div[2]/div/div[2]/form/div[10]/button').click()
-        time.sleep(5)
-        task_process(driver)
+        while True:
+            try:
+                driver = self.driver
+                driver.maximize_window()
+                login_process(driver)
+                task_process(driver)
+            except Exception as e:
+                print_centered_message("登陆失败、会话过期或窗口意外关闭，将重新运行脚本！")
+                # driver.quit()
+                self.tearDown()
+                self.setUp()  # 重新初始化Web
+
+                # driver.quit()
+
+    def tearDown(self):
+        self.driver.quit()
 
 
 if __name__ == "__main__":
