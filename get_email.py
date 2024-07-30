@@ -4,17 +4,14 @@ import email
 from email.header import decode_header
 import logging
 
-
-
-
 class ReceiveEmail:
     '''
     接收信息
     '''
-    # 输入邮件地址, 口令和IMAP服务器地址:
-    EMAIL = '2442962398@qq.com'  # 这里填写你自己的邮箱
-    PASSWORD = 'zdpqhabyjkucecba'  # 这个密码不是邮箱登录密码，是IMAP/SMTP服务密码
-    IMAP_SERVER = 'imap.qq.com'
+    def __init__(self, email_address, password, imap_server='imap.qq.com'):
+        self.EMAIL = email_address
+        self.PASSWORD = password
+        self.IMAP_SERVER = imap_server
 
     def guess_charset(self, msg):
         charset = msg.get_charset()
@@ -72,8 +69,6 @@ class ReceiveEmail:
         # 获取邮件编号列表:
         email_ids = messages[0].split()
 
-        # print('未读邮件的数量', len(email_ids))
-
         # 从最新邮件开始遍历
         for e_id in reversed(email_ids):
             status, msg_data = mail.fetch(e_id, '(RFC822)')
@@ -87,7 +82,9 @@ class ReceiveEmail:
                 if verification_code:
                     print('短信验证码:', verification_code[0])
                     # 标记邮件为已读
-                    mail.store(e_id, '+FLAGS', '\\Seen')
+                    mail.store(e_id, '+FLAGS', '\\Seen')  # 已读
+                    mail.store(e_id, '+FLAGS', '\\Deleted')  # 删除
+                    mail.expunge()
                     mail.logout()
                     return verification_code[0]
 
@@ -96,8 +93,11 @@ class ReceiveEmail:
         print('未读取到邮件内容')
         return None
 
-
-# verification_code = ReceiveEmail().qe_main()
+# 示例用法：
+# email_address = 'your_email@example.com'
+# password = 'your_password'
+# receive_email = ReceiveEmail(email_address, password)
+# verification_code = receive_email.qe_main()
 # print(verification_code)
 # if not verification_code:
 #     print('未找到验证码')

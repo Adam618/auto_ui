@@ -14,9 +14,31 @@ from get_email import ReceiveEmail
 
 # 参数设置
 MAX_OCR_NUM = 10  # 验证码OCR最大重新识别次数
-NAME = "19953199425"  # 用户名
-PWD = "Caoyang5115236"  # 密码
+
+# NAME = "19953199425"  # MMS用户名
+# PWD = "Caoyang5115236"  # MMS密码
 #
+# EMAIL = '2442962398@qq.com'  # 这里填写你自己的邮箱
+# SERVICE_CODE = 'zdpqhabyjkucecba'  # 这个密码不是邮箱登录密码，是IMAP/SMTP服务密码
+#
+def print_centered_message(message):
+    """
+    打印居中显示的消息，两边带分隔符
+    :param message: 要打印的消息
+    """
+    width = 80  # 控制台宽度
+    separator = '=' * 10
+    centered_message = f"{separator} {message} {separator}"
+    print("\n" + centered_message.center(width) + "\n")
+
+
+print_centered_message("欢迎使用工单自动处理系统")
+
+NAME = input("请输入MMS用户名: ")
+PWD = input("请输入MMS密码: ")
+
+EMAIL = input("请输入邮箱地址: ")
+SERVICE_CODE = input("请输入IMAP/SMTP服务密码: ")
 
 
 # NAME = "17353462690"  # 用户名
@@ -36,15 +58,6 @@ def countdown(wait_time, message):
     sys.stdout.write(f"\r{message}: 0秒\n")
 
 
-def print_centered_message(message):
-    """
-    打印居中显示的消息，两边带分隔符
-    :param message: 要打印的消息
-    """
-    width = 80  # 控制台宽度
-    separator = '=' * 10
-    centered_message = f"{separator} {message} {separator}"
-    print("\n" + centered_message.center(width) + "\n")
 
 
 def fill_general_info(driver, NAME, PWD):
@@ -125,14 +138,17 @@ def get_sms_code(driver):
 
     # 动态倒计时
     countdown(30, "等待短信验证码输入")
-
-    verification_code = ReceiveEmail().qe_main()
-    # 如果未找到验证码，提示用户手动输入
-    if not verification_code:
-        print('未获取到短信验证码, 请等待重启脚本或尝试手动输入！')
-    else:
-        # 将验证码输入到验证码输入框
-        sms_captcha_input_box.send_keys(verification_code)
+    try:
+        verification_code = ReceiveEmail(EMAIL, SERVICE_CODE).qe_main()
+        # 如果未找到验证码，提示用户手动输入
+        if not verification_code:
+            print('未获取到短信验证码, 请等待重启脚本或尝试手动输入！')
+        else:
+            # 将验证码输入到验证码输入框
+            sms_captcha_input_box.send_keys(verification_code)
+    except Exception:
+        print("爬取邮箱过程出错，请检查Email和授权码。可以手动输入短信验证码！")
+        pass
     time.sleep(5)
 
 
