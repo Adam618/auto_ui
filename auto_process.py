@@ -15,11 +15,7 @@ from get_email import ReceiveEmail
 # 参数设置
 MAX_OCR_NUM = 10  # 验证码OCR最大重新识别次数
 
-# NAME = "19953199425"  # MMS用户名
-# PWD = "Caoyang5115236"  # MMS密码
-#
-# EMAIL = '2442962398@qq.com'  # 这里填写你自己的邮箱
-# SERVICE_CODE = 'zdpqhabyjkucecba'  # 这个密码不是邮箱登录密码，是IMAP/SMTP服务密码
+
 #
 def print_centered_message(message):
     """
