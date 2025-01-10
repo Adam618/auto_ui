@@ -209,7 +209,7 @@ def check_and_click(driver):
         time.sleep(2)
         driver.find_element(By.XPATH, "//input[@type='text']").clear()
         time.sleep(2)
-        driver.find_element(By.XPATH, "//input[@type='text']").send_keys(u"孙国标")
+        driver.find_element(By.XPATH, "//input[@type='text']").send_keys(u"XXX")
         time.sleep(2)
         driver.find_element(By.XPATH,
                             u"(.//*[normalize-space(text()) and normalize-space(.)='确定'])[2]/following::div[5]").click()
