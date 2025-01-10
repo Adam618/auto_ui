@@ -37,8 +37,6 @@ EMAIL = input("请输入邮箱地址: ")
 SERVICE_CODE = input("请输入IMAP/SMTP服务密码: ")
 
 
-# NAME = "17353462690"  # 用户名
-# PWD = "dbq$LoDgBoi"  # 密码
 
 def countdown(wait_time, message):
     """
